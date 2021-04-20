@@ -110,7 +110,9 @@ class PreActBottleneck(nn.Module):
 class ResNetV2(nn.Module):
   """Implementation of Pre-activation (v2) ResNet mode."""
 
-  def __init__(self, block_units, width_factor, head_size=21843, zero_head=False):
+  def __init__(self, block_units, width_factor, head_size=21843,
+               zero_head=False):  # ('BiT-M-R50x1', lambda *a, **kw: ResNetV2([3, 4, 6, 3], 1, *a, **kw)),
+
     super().__init__()
     wf = width_factor  # shortcut 'cause we'll use it a lot.
 

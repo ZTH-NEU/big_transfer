@@ -169,6 +169,7 @@ def main(args):
 
   logger.info(f"Loading model from {args.model}.npz")
   model = models.KNOWN_MODELS[args.model](head_size=len(valid_set.classes), zero_head=True)
+  logger.info(f'head_size = valid_set.classes ={valid_set.classes}')
   model.load_from(np.load(f"{args.model}.npz"))
 
   logger.info("Moving model onto all GPUs")
