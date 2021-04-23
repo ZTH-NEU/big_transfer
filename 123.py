@@ -35,22 +35,22 @@
 # # 调用函数
 # mkdir(mkpath)
 
-# import torch
-# import torch.utils.data as Data
-#
-# BATCH_SIZE = 5
-#
-# x = torch.linspace(1, 10, 10)
-# y = torch.linspace(10, 1, 10)
-# # 把数据放在数据库中
-# torch_dataset = Data.TensorDataset(x, y)
-# loader = Data.DataLoader(
-#     # 从数据库中每次抽出batch size个样本
-#     dataset=torch_dataset,
-#     batch_size=BATCH_SIZE,
-#     shuffle=True,
-#     num_workers=2,
-# )
+import torch
+import torch.utils.data as Data
+
+BATCH_SIZE = 5
+
+x = torch.linspace(1, 10, 10)
+y = torch.linspace(10, 1, 10)
+# 把数据放在数据库中
+torch_dataset = Data.TensorDataset(x, y)
+loader = Data.DataLoader(
+    # 从数据库中每次抽出batch size个样本
+    dataset=torch_dataset,
+    batch_size=BATCH_SIZE,
+    shuffle=True,
+    num_workers=2,
+)
 #
 # a = torch.tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3], [4, 5, 6], [7, 8, 9]])
 #
@@ -69,32 +69,30 @@
 # for x_train, y_label in train_ids:
 #
 #     print(x_train, y_label)
-# def show_batch():
-#     for epoch in range(3):
-#         for  batch_x , batch_y in recycle(loader):
-#             # training
-#
-#             print("batch_x:{}, batch_y:{}".format(batch_x,batch_y))
-#
-#             x, y_a, y_b =mixup_data(batch_x,batch_y,0.1)
-#             print(x,y_a,y_b)
-#
-#
-# def recycle(iterable):
-#     """Variant of itertools.cycle that does not save iterates."""
-#     # while True:
-#     for i in iterable:
-#         yield i
-#
-#
-# def show_batch1():
-#     for epoch in range(3):
-#         for step, (batch_x, batch_y) in enumerate(loader):
-#             # training
-#
-#             print("steop:{}, batch_x:{}, batch_y：{}".format(step, batch_x, batch_y))
-#             print(type(step))
-#
+def show_batch():
+    for epoch in range(3):
+        for  batch_x , batch_y in recycle(loader):
+            # training
+
+            print("batch_x:{}, batch_y:{}".format(batch_x,batch_y))
+
+
+
+def recycle(iterable):
+    """Variant of itertools.cycle that does not save iterates."""
+    # while True:
+    for i in iterable:
+        yield i
+
+
+def show_batch1():
+    for epoch in range(3):
+        for step, (batch_x, batch_y) in enumerate(loader):
+            # training
+
+            print("steop:{}, batch_x:{}, batch_y：{}".format(step, batch_x, batch_y))
+            print(type(step))
+
 #
 #
 #
@@ -108,9 +106,9 @@
 #     return mixed_x, y_a, y_b
 #
 #
-# if __name__ == '__main__':
-#     show_batch()
-#     print("``````````````")
+if __name__ == '__main__':
+    show_batch()
+    print("``````````````")
 
 # import numpy as np
 # import torch
@@ -123,10 +121,3 @@
 # a = 15000
 # if a < 10_000:
 #     print("yes")
-cout = None
-cin = 10
-cmid = None
-cout = cout or cin
-cmid = cmid or cout // 4
-print(cout)
-print(cmid)
