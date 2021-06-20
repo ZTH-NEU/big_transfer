@@ -37,8 +37,22 @@
 
 import torch
 import torch.utils.data as Data
+from bit_pytorch import lbtoolbox as lb
+from bit_pytorch.train import DogCat
+import torchvision as tv
+BATCH_SIZE = 1
 
-BATCH_SIZE = 5
+def mixup_data(x, y, l):
+  """Returns mixed inputs, pairs of targets, and lambda"""
+  indices = torch.randperm(x.shape[0]).to(x.device)
+
+  mixed_x = l * x + (1 - l) * x[indices]
+  y_a, y_b = y, y[indices]
+  return mixed_x, y_a, y_b
+
+
+def mixup_criterion(criterion, pred, y_a, y_b, l):
+  return l * criterion(pred, y_a) + (1 - l) * criterion(pred, y_b)
 
 x = torch.linspace(1, 10, 10)
 y = torch.linspace(10, 1, 10)
@@ -48,76 +62,51 @@ loader = Data.DataLoader(
     # 从数据库中每次抽出batch size个样本
     dataset=torch_dataset,
     batch_size=BATCH_SIZE,
-    shuffle=True,
     num_workers=2,
 )
-#
-# a = torch.tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3], [4, 5, 6], [7, 8, 9]])
-#
-# b = torch.tensor([44, 55, 66, 44, 55, 66, 44, 55, 66, 44, 55, 66])
-#
-# train_ids = Data.TensorDataset(a, b) #相当于zip函数
-#
-# # 切片输出
-#
-# print(train_ids[0:1])
-#
-# print('=' * 60)
-#
-# # 循环取数据
-#
-# for x_train, y_label in train_ids:
-#
-#     print(x_train, y_label)
+train_tx = tv.transforms.Compose([
+    tv.transforms.Resize((160, 160)),
+    tv.transforms.RandomCrop((80, 80)),
+    tv.transforms.RandomHorizontalFlip(),
+    tv.transforms.ToTensor(),
+    tv.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+])
 def show_batch():
     for epoch in range(3):
         for  batch_x , batch_y in recycle(loader):
-            # training
 
-            print("batch_x:{}, batch_y:{}".format(batch_x,batch_y))
+            print("step:,batch_x:{}, batch_y:{}".format(batch_x,batch_y))
 
 
 
 def recycle(iterable):
     """Variant of itertools.cycle that does not save iterates."""
-    # while True:
-    for i in iterable:
-        yield i
+    while True:
+        for i in iterable:
+            yield i
 
 
 def show_batch1():
-    for epoch in range(3):
-        for step, (batch_x, batch_y) in enumerate(loader):
-            # training
+    # for epoch in range(3):
+    step =0
+    train_set = DogCat('G:/赵天祜/kaggle_DogsVSCats/train_mini/', transform=train_tx, train=True,test = False)
+    train_loader = torch.utils.data.DataLoader(
+        train_set, batch_size=10, shuffle=True,
+        num_workers=1, pin_memory=True, drop_last=False)
 
-            print("steop:{}, batch_x:{}, batch_y：{}".format(step, batch_x, batch_y))
-            print(type(step))
 
-#
-#
-#
-# def mixup_data(x, y, l):
-#     """Returns mixed inputs, pairs of targets, and lambda"""
-#     indices = torch.randperm(x.shape[0]).to(x.device)
-#     print(indices)
-#
-#     mixed_x = l * x + (1 - l) * x[indices]
-#     y_a, y_b = y, y[indices]
-#     return mixed_x, y_a, y_b
-#
-#
+
+    for x, y in recycle(train_loader):
+        # training
+
+
+        # print("steop:{}, batch_x:{}, batch_y：{}".format(step, batch_x, batch_y))
+        step +=1
+        print(step)
+
+        # print(type(step))
+
+
 if __name__ == '__main__':
-    show_batch()
+    show_batch1()
     print("``````````````")
-
-# import numpy as np
-# import torch
-# mixup = 0.1
-# mixup_l = np.random.beta(mixup, mixup,10) if mixup > 0 else 1
-# print(mixup_l)
-# x = 10
-# indices = torch.randperm(x.shape[0]).to(x.device)
-# print(indices)
-# a = 15000
-# if a < 10_000:
-#     print("yes")

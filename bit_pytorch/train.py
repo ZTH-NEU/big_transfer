@@ -29,6 +29,13 @@ import bit_pytorch.models as models
 
 import bit_common
 import bit_hyperrule
+from bit_pytorch.dataset import DogCat
+import os
+# from scipy import interp
+from scipy import interp
+import matplotlib.pyplot as plt
+from itertools import cycle
+from sklearn.metrics import roc_curve, auc, f1_score, precision_recall_curve, average_precision_score
 
 
 def topk(output, target, ks=(1,)):
@@ -41,14 +48,22 @@ def topk(output, target, ks=(1,)):
 
 def recycle(iterable):
   """Variant of itertools.cycle that does not save iterates."""
-  while True:
-    for i in iterable:
-      yield i
+  # while True:
+  #   for i in iterable:
+  #     yield i
+  for i in iterable:
+    yield i
 
 
 def mktrainval(args, logger):
   """Returns train and validation datasets."""
-  precrop, crop = bit_hyperrule.get_resolution_from_dataset(args.dataset)
+  # precrop, crop = bit_hyperrule.get_resolution_from_dataset(args.dataset)
+  precrop =160
+  crop =128
+  print('******************************************')
+  print(precrop,crop)
+  print('******************************************')
+
   train_tx = tv.transforms.Compose([
       tv.transforms.Resize((precrop, precrop)),
       tv.transforms.RandomCrop((crop, crop)),
@@ -71,6 +86,9 @@ def mktrainval(args, logger):
   elif args.dataset == "imagenet2012":
     train_set = tv.datasets.ImageFolder(pjoin(args.datadir, "train"), train_tx)
     valid_set = tv.datasets.ImageFolder(pjoin(args.datadir, "val"), val_tx)
+  elif args.dataset == "zth":
+    train_set = DogCat('G:/赵天祜/kaggle_DogsVSCats/train/', transform=train_tx, train=True,test = False)
+    valid_set = DogCat('G:/赵天祜/kaggle_DogsVSCats/train/', transform=val_tx, train=True, test= False)
   else:
     raise ValueError(f"Sorry, we have not spent time implementing the "
                      f"{args.dataset} dataset in the PyTorch codebase. "
@@ -168,8 +186,8 @@ def main(args):
   train_set, valid_set, train_loader, valid_loader = mktrainval(args, logger)
 
   logger.info(f"Loading model from {args.model}.npz")
-  model = models.KNOWN_MODELS[args.model](head_size=len(valid_set.classes), zero_head=True)
-  logger.info(f'head_size = valid_set.classes ={valid_set.classes}')
+  model = models.KNOWN_MODELS[args.model](head_size=10, zero_head=True)
+  logger.info(f'head_size = valid_set.classes =10')
   model.load_from(np.load(f"{args.model}.npz"))
 
   logger.info("Moving model onto all GPUs")
@@ -231,15 +249,26 @@ def main(args):
 
       if mixup > 0.0:
         x, y_a, y_b = mixup_data(x, y, mixup_l)
+      score_list = []  # 存储预测得分
+      label_list = []  # 存储真实标签
+      num_class = 2
+
+        # prob_tmp = torch.nn.Softmax(dim=1)(outputs) # (batchsize, nclass)
+
 
       # compute output
       with chrono.measure("fprop"):
         logits = model(x)
+        score_tmp = logits  # (batchsize, nclass)
+
         if mixup > 0.0:
           c = mixup_criterion(cri, logits, y_a, y_b, mixup_l)
         else:
           c = cri(logits, y)
         c_num = float(c.data.cpu().numpy())  # Also ensures a sync point.
+
+        score_list.extend(score_tmp.detach().cpu().numpy())
+        label_list.extend(y.cpu().numpy())
 
       # Accumulate grads
       with chrono.measure("grads"):
@@ -273,6 +302,73 @@ def main(args):
       }, savename)
       logger.info('f Running save.....')
     # Final eval at end of training.
+
+    #绘制ROC曲线
+    score_array = np.array(score_list)
+    score_array = score_array[:,:2]
+    # 将label转换成onehot形式
+    label_tensor = torch.tensor(label_list)
+    label_tensor = label_tensor.reshape((label_tensor.shape[0], 1))
+    label_onehot = torch.zeros(label_tensor.shape[0], num_class)
+    label_onehot.scatter_(dim=1, index=label_tensor, value=1)
+    label_onehot = label_onehot[:,:2]
+    label_onehot = np.array(label_onehot)
+
+    print("score_array:", score_array.shape)  # (batchsize, classnum)
+    print("label_onehot:", label_onehot.shape)  # torch.Size([batchsize, classnum])
+
+    # 调用sklearn库，计算每个类别对应的fpr和tpr
+    fpr_dict = dict()
+    tpr_dict = dict()
+    roc_auc_dict = dict()
+    for i in range(num_class):
+        fpr_dict[i], tpr_dict[i], _ = roc_curve(label_onehot[:, i], score_array[:, i])
+        roc_auc_dict[i] = auc(fpr_dict[i], tpr_dict[i])
+    # micro
+    fpr_dict["micro"], tpr_dict["micro"], _ = roc_curve(label_onehot.ravel(), score_array.ravel())
+    roc_auc_dict["micro"] = auc(fpr_dict["micro"], tpr_dict["micro"])
+
+    # macro
+    # First aggregate all false positive rates
+    all_fpr = np.unique(np.concatenate([fpr_dict[i] for i in range(num_class)]))
+    # Then interpolate all ROC curves at this points
+    mean_tpr = np.zeros_like(all_fpr)
+    for i in range(num_class):
+        mean_tpr += interp(all_fpr, fpr_dict[i], tpr_dict[i])
+    # Finally average it and compute AUC
+    mean_tpr /= num_class
+    fpr_dict["macro"] = all_fpr
+    tpr_dict["macro"] = mean_tpr
+    roc_auc_dict["macro"] = auc(fpr_dict["macro"], tpr_dict["macro"])
+
+    # 绘制所有类别平均的roc曲线
+    plt.figure()
+    lw = 2
+    plt.plot(fpr_dict["micro"], tpr_dict["micro"],
+             label='micro-average ROC curve (area = {0:0.2f})'
+                   ''.format(roc_auc_dict["micro"]),
+             color='deeppink', linestyle=':', linewidth=4)
+
+    plt.plot(fpr_dict["macro"], tpr_dict["macro"],
+             label='macro-average ROC curve (area = {0:0.2f})'
+                   ''.format(roc_auc_dict["macro"]),
+             color='navy', linestyle=':', linewidth=4)
+
+    colors = cycle(['aqua', 'darkorange', 'cornflowerblue'])
+    for i, color in zip(range(num_class), colors):
+        plt.plot(fpr_dict[i], tpr_dict[i], color=color, lw=lw,
+                 label='ROC curve of class {0} (area = {1:0.2f})'
+                       ''.format(i, roc_auc_dict[i]))
+    plt.plot([0, 1], [0, 1], 'k--', lw=lw)
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Some extension of Receiver operating characteristic to multi-class')
+    plt.legend(loc="lower right")
+    plt.savefig('set113_roc.jpg')
+    plt.show()
+
     run_eval(model, valid_loader, device, chrono, logger, step='end')
 
   logger.info(f"Timings:\n{chrono}")

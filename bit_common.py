@@ -34,7 +34,8 @@ def argparser(known_models):
   parser.add_argument("--bit_pretrained_dir", default='.',
                       help="Where to search for pretrained BiT models.")
 
-  parser.add_argument("--dataset", choices=list(bit_hyperrule.known_dataset_sizes.keys()),
+  parser.add_argument("--dataset",
+                      # , choices=list(bit_hyperrule.known_dataset_sizes.keys()),
                       help="Choose the dataset. It should be easy to add your own! "
                       "Don't forget to set --datadir if necessary.")
   parser.add_argument("--examples_per_class", type=int, default=None,
