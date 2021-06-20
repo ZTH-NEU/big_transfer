@@ -26,6 +26,7 @@ class DogCat(data.Dataset):
 
             imgs = sorted(imgs, key=lambda x: int(x.split('.')[-2]))
         imgs_num = len(imgs)
+        print(imgs_num)
 
         if self.test:
             self.imgs = imgs

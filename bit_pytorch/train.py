@@ -87,8 +87,8 @@ def mktrainval(args, logger):
     train_set = tv.datasets.ImageFolder(pjoin(args.datadir, "train"), train_tx)
     valid_set = tv.datasets.ImageFolder(pjoin(args.datadir, "val"), val_tx)
   elif args.dataset == "zth":
-    train_set = DogCat('G:/赵天祜/kaggle_DogsVSCats/train/', transform=train_tx, train=True,test = False)
-    valid_set = DogCat('G:/赵天祜/kaggle_DogsVSCats/test/', transform=val_tx, train=True, test= False)
+    train_set = DogCat('E:/dogcat_data/2/', transform=train_tx, train=True,test = False)
+    valid_set = DogCat('E:/dogcat_data/1/', transform=val_tx, train=True, test= False)
   elif args.dataset == "lung":
     train_set = DogCat('E:/data/train/', transform=train_tx, train=True,test = False)
     valid_set = DogCat('E:/data/test/', transform=val_tx, train=True, test= False)
@@ -216,11 +216,11 @@ def run_eval(model, data_loader, device, chrono, logger, step):
                  ''.format(roc_auc_dict["macro"]),
            color='navy', linestyle=':', linewidth=4)
 
-  colors = cycle(['aqua', 'darkorange', 'cornflowerblue'])
-  for i, color in zip(range(num_class), colors):
-    plt.plot(fpr_dict[i], tpr_dict[i], color=color, lw=lw,
-             label='ROC curve of class {0} (area = {1:0.2f})'
-                   ''.format(i, roc_auc_dict[i]))
+  # colors = cycle(['aqua', 'darkorange', 'cornflowerblue'])
+  # for i, color in zip(range(num_class), colors):
+  #   plt.plot(fpr_dict[i], tpr_dict[i], color=color, lw=lw,
+  #            label='ROC curve of class {0} (area = {1:0.2f})'
+  #                  ''.format(i, roc_auc_dict[i]))
   plt.plot([0, 1], [0, 1], 'k--', lw=lw)
   plt.xlim([0.0, 1.0])
   plt.ylim([0.0, 1.05])
