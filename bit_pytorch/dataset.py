@@ -22,9 +22,9 @@ class DogCat(data.Dataset):
         if self.test:
             imgs = sorted(imgs, key=lambda x: int(x.split('.')[-2].split('/')[-1]))
         else:
-            # imgs = sorted(imgs, key=lambda x: int(x.split('.')[-2].split('-')[0].split('/')[-1]))
+            imgs = sorted(imgs, key=lambda x: int(x.split('.')[-2].split('-')[0].split('/')[-1]))
 
-            imgs = sorted(imgs, key=lambda x: int(x.split('.')[-2]))
+            # imgs = sorted(imgs, key=lambda x: int(x.split('.')[-2]))
         imgs_num = len(imgs)
 
         if self.test:
@@ -63,8 +63,8 @@ class DogCat(data.Dataset):
         if self.test:
             label = int(self.imgs[index].split('.')[-2].split('/')[-1])
         else:
-            # label = int(img_path.split('.')[-2].split('-')[-1])
-            label = 1 if 'dog' in img_path.split('/')[-1] else 0
+            label = int(img_path.split('.')[-2].split('-')[-1])
+            # label = 1 if 'dog' in img_path.split('/')[-1] else 0
         data_pre = Image.open(img_path).convert('RGB')
         data = self.transform(data_pre)
         return data, label

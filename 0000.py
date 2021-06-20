@@ -27,3 +27,5 @@ a ='E:/data/train/1-baojinchun-8_644BF14F8B1740C190FBDF7EE12CEB36-70-0.png'
 b = int(a.split('.')[-2].split('-')[-1])
 
 print(b)
+
+str = 'python -m bit_pytorch.train --name cifar10_date_lung_  --model BiT-M-R50x1 --logdir /tmp/bit_logs --dataset lung --datadir data  --batch 512 --batch_split 2'
