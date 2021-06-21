@@ -40,6 +40,7 @@ import torch.utils.data as Data
 from bit_pytorch import lbtoolbox as lb
 from bit_pytorch.train import DogCat
 import torchvision as tv
+import collections
 BATCH_SIZE = 1
 
 def mixup_data(x, y, l):
@@ -108,5 +109,14 @@ def show_batch1():
 
 
 if __name__ == '__main__':
-    show_batch1()
+    a  = [14,5]
+
+
+    print(a.index(max(a)))
+    print(a.index(min(a)))
+
+    a[a.index(max(a))] = 1
+    a[a.index(min(a))] = 0
+    print(a)
+
     print("``````````````")

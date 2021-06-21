@@ -87,8 +87,11 @@ def mktrainval(args, logger):
     train_set = tv.datasets.ImageFolder(pjoin(args.datadir, "train"), train_tx)
     valid_set = tv.datasets.ImageFolder(pjoin(args.datadir, "val"), val_tx)
   elif args.dataset == "zth":
-    train_set = DogCat('E:/dogcat_data/2/', transform=train_tx, train=True,test = False)
-    valid_set = DogCat('E:/dogcat_data/1/', transform=val_tx, train=True, test= False)
+    train_set = DogCat('E:/dogcat_data/train_mini/', transform=train_tx, train=True,test = False)
+    valid_set = DogCat('E:/dogcat_data/test_mini/', transform=val_tx, train=False, test= True)
+  elif args.dataset == "zth_mini":
+    train_set = DogCat('E:/dogcat_data/2/', transform=train_tx, train=True, test=False)
+    valid_set = DogCat('E:/dogcat_data/1/', transform=val_tx, train=False, test=True)
   elif args.dataset == "lung":
     train_set = DogCat('E:/data/train/', transform=train_tx, train=True,test = False)
     valid_set = DogCat('E:/data/test/', transform=val_tx, train=True, test= False)
@@ -108,7 +111,7 @@ def mktrainval(args, logger):
   micro_batch_size = args.batch // args.batch_split
 
   valid_loader = torch.utils.data.DataLoader(
-      valid_set, batch_size=micro_batch_size, shuffle=False,
+      valid_set, batch_size=micro_batch_size, shuffle=True,
       num_workers=args.workers, pin_memory=True, drop_last=False)
 
   if micro_batch_size <= len(train_set):
@@ -135,6 +138,8 @@ def run_eval(model, data_loader, device, chrono, logger, step):
 
   all_c, all_top1, all_top5 = [], [], []
   end = time.time()
+  score_list = []  # 存储预测得分
+  label_list = []  # 存储真实标签
   for b, (x, y) in enumerate(data_loader):
     with torch.no_grad():
       x = x.to(device, non_blocking=True)
@@ -143,8 +148,6 @@ def run_eval(model, data_loader, device, chrono, logger, step):
       # measure data loading time
       chrono._done("eval load", time.time() - end)
 
-      score_list = []  # 存储预测得分
-      label_list = []  # 存储真实标签
       num_class = 2
 
       # compute output, measure accuracy and record loss.
@@ -168,6 +171,13 @@ def run_eval(model, data_loader, device, chrono, logger, step):
   # 绘制ROC曲线
   score_array = np.array(score_list)
   score_array = score_array[:, :2]
+  for i in range(len(score_array)):
+    index_max = score_array[i].argmax()
+    index_min = score_array[i].argmin()
+
+    score_array[i][index_max] = 1
+    score_array[i][index_min] = 0
+
   # 将label转换成onehot形式
   label_tensor = torch.tensor(label_list)
   label_tensor = label_tensor.reshape((label_tensor.shape[0], 1))
@@ -216,11 +226,11 @@ def run_eval(model, data_loader, device, chrono, logger, step):
                  ''.format(roc_auc_dict["macro"]),
            color='navy', linestyle=':', linewidth=4)
 
-  # colors = cycle(['aqua', 'darkorange', 'cornflowerblue'])
-  # for i, color in zip(range(num_class), colors):
-  #   plt.plot(fpr_dict[i], tpr_dict[i], color=color, lw=lw,
-  #            label='ROC curve of class {0} (area = {1:0.2f})'
-  #                  ''.format(i, roc_auc_dict[i]))
+  colors = cycle(['aqua', 'darkorange', 'cornflowerblue'])
+  for i, color in zip(range(num_class), colors):
+    plt.plot(fpr_dict[i], tpr_dict[i], color=color, lw=lw,
+             label='ROC curve of class {0} (area = {1:0.2f})'
+                   ''.format(i, roc_auc_dict[i]))
   plt.plot([0, 1], [0, 1], 'k--', lw=lw)
   plt.xlim([0.0, 1.0])
   plt.ylim([0.0, 1.05])
