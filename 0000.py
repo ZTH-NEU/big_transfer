@@ -23,4 +23,5 @@ plt.imshow(img2)
 plt.show()
 
 
+
 str = 'python -m bit_pytorch.train --name cifar10_date_lung_  --model BiT-M-R50x1 --logdir /tmp/bit_logs --dataset lung --datadir data  --batch 512 --batch_split 2'
