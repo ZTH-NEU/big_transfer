@@ -144,6 +144,12 @@ class ResNetV2(nn.Module):
             [(f'unit{i:02d}', PreActBottleneck(cin=2048*wf, cout=2048*wf, cmid=512*wf)) for i in range(2, block_units[3] + 1)],
         ))),
     ]))
+    aaa = len(list(self.parameters()))
+    i = 0
+    for param in self.parameters():
+        if i < aaa -3:
+          param.requires_grad = False
+        i += 1
     # pylint: enable=line-too-long
 
     self.zero_head = zero_head
@@ -190,3 +196,20 @@ KNOWN_MODELS = OrderedDict([
     ('BiT-S-R152x2', lambda *a, **kw: ResNetV2([3, 8, 36, 3], 2, *a, **kw)),
     ('BiT-S-R152x4', lambda *a, **kw: ResNetV2([3, 8, 36, 3], 4, *a, **kw)),
 ])
+
+def print_network(model, name):
+    """Print out the network information."""
+    num_params = 0
+    print(model)
+    print(name)
+    for p in model.parameters():
+        num_params += p.numel()  # numel()获取tensor中一共包含多少个元素
+    print("The number of parameters: {}".format(num_params))
+    for name, param in model.named_parameters():
+        if param.requires_grad:
+            print(name)
+
+if __name__ == "__main__":
+    modle = ResNetV2([3, 4, 6, 3], 1,  2)
+    print_network(modle,'m')
+

@@ -168,8 +168,11 @@ def run_eval(model, data_loader, device, chrono, logger, step):
     end = time.time()
 
   # 绘制ROC曲线
+  print(score_list)
+  print(label_list)
   score_array = np.array(score_list)
   score_array = score_array[:, :2]
+  print(score_array)
   for i in range(len(score_array)):
     index_max = score_array[i].argmax()
     index_min = score_array[i].argmin()
@@ -273,7 +276,7 @@ def main(args):
   train_set, valid_set, train_loader, valid_loader = mktrainval(args, logger)
 
   logger.info(f"Loading model from {args.model}.npz")
-  model = models.KNOWN_MODELS[args.model](head_size=10, zero_head=True)
+  model = models.KNOWN_MODELS[args.model](head_size= 2, zero_head=True)
   logger.info(f'head_size = valid_set.classes =10')
   model.load_from(np.load(f"{args.model}.npz"))
 
@@ -286,7 +289,7 @@ def main(args):
   step = 0
 
   # Note: no weight-decay!
-  optim = torch.optim.SGD(model.parameters(), lr=0.003, momentum=0.9)
+  optim = torch.optim.SGD(filter(lambda p : p.requires_grad, model.parameters()), lr=0.003, momentum=0.9)
 
   # Resume fine-tuning if we find a saved model.
   savename = pjoin(args.logdir, args.name, "bit.pth.tar")
@@ -296,7 +299,7 @@ def main(args):
     logger.info(f"Found saved model to resume from at '{savename}'")
 
     step = checkpoint["step"]
-    model.load_state_dict(checkpoint["model"])
+    model.load_state_dict(checkpoint["model"],strict= False)
     optim.load_state_dict(checkpoint["optim"])
     logger.info(f"Resumed at step {step}")
   except FileNotFoundError:
